@@ -23,7 +23,7 @@ from graphql import assert_valid_name
 
 from .compat import ArrayField, HStoreField, JSONField, RangeField
 from .fields import DjangoListField, DjangoConnectionField
-from .utils import import_single_dispatch
+from .utils import import_single_dispatch, tuple_keys_contain_str
 
 singledispatch = import_single_dispatch()
 
@@ -58,7 +58,11 @@ def convert_django_field_with_choices(field, registry=None):
         if converted:
             return converted
     choices = getattr(field, "choices", None)
-    if choices:
+
+    has_str_keys = tuple_keys_contain_str(choices)
+
+    # If we have choices and they contain keys as string...
+    if choices and has_str_keys:
         meta = field.model._meta
         name = to_camel_case("{}_{}".format(meta.object_name, field.name))
         choices = list(get_choices(choices))
@@ -72,6 +76,7 @@ def convert_django_field_with_choices(field, registry=None):
 
         enum = Enum(name, list(named_choices), type=EnumWithDescriptionsType)
         converted = enum(description=field.help_text, required=not field.null)
+    # If we have no choices or they are integers
     else:
         converted = convert_django_field(field, registry)
     if registry is not None:

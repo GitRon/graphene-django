@@ -4,8 +4,7 @@ from django.core.exceptions import ImproperlyConfigured
 from graphene import ID, Boolean, Float, Int, List, String, UUID, Date, DateTime, Time
 
 from .forms import GlobalIDFormField, GlobalIDMultipleChoiceField
-from ..utils import import_single_dispatch
-
+from ..utils import import_single_dispatch, tuple_keys_contain_str
 
 singledispatch = import_single_dispatch()
 
@@ -34,11 +33,7 @@ def convert_form_field_to_choice(field):
     """
     Determines if you want the field as the choice's integer or as a string
     """
-    has_str_choices = False
-    for item in field.choices:
-        if not isinstance(item[0], int):
-            has_str_choices = True
-            break
+    has_str_choices = tuple_keys_contain_str(field.choices)
     if has_str_choices:
         return String(description=field.help_text, required=field.required)
     return Int(description=field.help_text, required=field.required)
