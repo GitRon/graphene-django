@@ -63,7 +63,10 @@ def test_should_url_convert_string():
 
 
 def test_should_choice_convert_string():
-    assert_conversion(forms.ChoiceField, String)
+    """
+    If no string choice is found we interpret it as `string`
+    """
+    assert_conversion(forms.ChoiceField, Int)
 
 
 def test_should_base_field_convert_string():

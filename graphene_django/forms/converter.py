@@ -23,11 +23,25 @@ def convert_form_field(field):
 @convert_form_field.register(forms.EmailField)
 @convert_form_field.register(forms.SlugField)
 @convert_form_field.register(forms.URLField)
-@convert_form_field.register(forms.ChoiceField)
 @convert_form_field.register(forms.RegexField)
 @convert_form_field.register(forms.Field)
 def convert_form_field_to_string(field):
     return String(description=field.help_text, required=field.required)
+
+
+@convert_form_field.register(forms.ChoiceField)
+def convert_form_field_to_choice(field):
+    """
+    Determines if you want the field as the choice's integer or as a string
+    """
+    has_str_choices = False
+    for item in field.choices:
+        if not isinstance(item[0], int):
+            has_str_choices = True
+            break
+    if has_str_choices:
+        return String(description=field.help_text, required=field.required)
+    return Int(description=field.help_text, required=field.required)
 
 
 @convert_form_field.register(forms.UUIDField)

@@ -6,11 +6,15 @@ from graphene import Field, InputField
 from graphene.relay.mutation import ClientIDMutation
 from graphene.types.mutation import MutationOptions
 
+from graphql import GraphQLError
+
 # from graphene.types.inputobjecttype import (
 #     InputObjectTypeOptions,
 #     InputObjectType,
 # )
 from graphene.types.utils import yank_fields_from_attrs
+from promise import is_thenable, Promise
+
 from graphene_django.registry import get_global_registry
 
 from .converter import convert_form_field
@@ -67,6 +71,38 @@ class BaseDjangoFormMutation(ClientIDMutation):
             kwargs["instance"] = instance
 
         return kwargs
+
+    @classmethod
+    def mutate(cls, root, info, input):
+        """
+        Most code derived one-to-one from base class
+        :return:
+        """
+        def on_resolve(payload):
+            try:
+                payload.client_mutation_id = input.get("client_mutation_id")
+            except Exception:
+                raise Exception(
+                    ("Cannot set client_mutation_id in the payload object {}").format(
+                        repr(payload)
+                    )
+                )
+            return payload
+
+        result = cls.mutate_and_get_payload(root, info, **input)
+
+        # TODO find a way to return this as separate errors / error list
+        if result.errors:
+            err_msg = ''
+            for err in result.errors:
+                err_msg += f"Field '{err.field}': {err.messages[0]} "
+
+            raise GraphQLError(err_msg)
+
+        if is_thenable(result):
+            return Promise.resolve(result).then(on_resolve)
+
+        return on_resolve(result)
 
 
 # class DjangoFormInputObjectTypeOptions(InputObjectTypeOptions):
