@@ -59,10 +59,8 @@ def convert_django_field_with_choices(field, registry=None):
             return converted
     choices = getattr(field, "choices", None)
 
-    has_str_keys = tuple_keys_contain_str(choices)
-
     # If we have choices and they contain keys as string...
-    if choices and has_str_keys:
+    if choices and tuple_keys_contain_str(choices):
         meta = field.model._meta
         name = to_camel_case("{}_{}".format(meta.object_name, field.name))
         choices = list(get_choices(choices))
