@@ -91,13 +91,12 @@ class BaseDjangoFormMutation(ClientIDMutation):
 
         result = cls.mutate_and_get_payload(root, info, **input)
 
-        # TODO find a way to return this as separate errors / error list
         if result.errors:
             err_msg = ''
             for err in result.errors:
                 err_msg += f"Field '{err.field}': {err.messages[0]} "
 
-            raise GraphQLError(err_msg)
+            raise GraphQLError(err_msg.strip())
 
         if is_thenable(result):
             return Promise.resolve(result).then(on_resolve)
